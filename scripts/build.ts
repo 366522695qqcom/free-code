@@ -1,5 +1,6 @@
-import { chmodSync, existsSync, mkdirSync } from 'fs'
-import { dirname } from 'path'
+import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { dirname, join } from 'path'
+import { globSync } from 'glob'
 
 const pkg = await Bun.file(new URL('../package.json', import.meta.url)).json() as {
   name: string
@@ -9,6 +10,10 @@ const pkg = await Bun.file(new URL('../package.json', import.meta.url)).json() a
 const args = process.argv.slice(2)
 const compile = args.includes('--compile')
 const dev = args.includes('--dev')
+// Parse --windows flag for cross-compilation from Linux/macOS to Windows.
+// Also detect when the build is already running on Windows.
+const windowsTarget =
+  args.includes('--windows') || process.platform === 'win32'
 
 const fullExperimentalFeatures = [
   'AGENT_MEMORY_SNAPSHOT',
@@ -125,7 +130,6 @@ if (outDir !== '.') {
 }
 
 const externals = [
-  '@ant/*',
   'audio-capture-napi',
   'image-processor-napi',
   'modifiers-napi',
@@ -164,12 +168,14 @@ const cmd = [
   './src/entrypoints/cli.tsx',
   '--compile',
   '--target',
-  'bun',
+  windowsTarget ? 'bun-windows-x64' : 'bun',
   '--format',
   'esm',
   '--outfile',
   outfile,
   '--minify',
+  // Note: --bytecode is not used because Bun doesn't support ESM bytecode.
+  // On Windows, this is especially important as the bytecode feature requires CJS format.
   '--packages',
   'bundle',
   '--conditions',
@@ -188,12 +194,60 @@ for (const [key, value] of Object.entries(defines)) {
   cmd.push('--define', `${key}=${value}`)
 }
 
+// Bun 1.2.14 has a bug where bun:bundle's feature() macro is not inlined
+// when using --compile, causing "Cannot find package 'bundle'" at runtime.
+// Workaround: temporarily replace bun:bundle imports with a polyfill that
+// returns true/false based on the feature set, then restore after build.
+const featureArrayStr = JSON.stringify(features)
+const polyfillContent = `// Auto-generated polyfill for bun:bundle (build-time workaround for Bun 1.2.14)
+const _features = new Set(${featureArrayStr});
+export function feature(name) { return _features.has(name); }
+`
+
+const polyfillPath = join(process.cwd(), 'src', '_bundlePolyfill.ts')
+const sourceFiles = globSync('src/**/*.ts', { cwd: process.cwd() })
+  .concat(globSync('src/**/*.tsx', { cwd: process.cwd() }))
+  .map(f => join(process.cwd(), f))
+
+const modifiedFiles: Array<{ path: string; original: string }> = []
+for (const filePath of sourceFiles) {
+  try {
+    const content = readFileSync(filePath, 'utf8')
+    if (content.includes('bun:bundle')) {
+      // Replace any import from 'bun:bundle' with import from 'src/_bundlePolyfill.js'
+      const finalContent = content.replace(
+        /from\s+['"]bun:bundle['"]/g,
+        "from 'src/_bundlePolyfill.js'"
+      )
+      if (finalContent !== content) {
+        writeFileSync(filePath, finalContent)
+        modifiedFiles.push({ path: filePath, original: content })
+      }
+    }
+  } catch {
+    // Skip files that can't be read
+  }
+}
+
+// Write the polyfill file
+writeFileSync(polyfillPath, polyfillContent)
+
+// Remove --feature flags since we're using the polyfill instead
+const cmdWithoutFeatures = cmd.filter(c => !c.startsWith('--feature='))
+
 const proc = Bun.spawnSync({
-  cmd,
+  cmd: cmdWithoutFeatures,
   cwd: process.cwd(),
   stdout: 'inherit',
   stderr: 'inherit',
 })
+
+// Restore original source files
+for (const { path, original } of modifiedFiles) {
+  writeFileSync(path, original)
+}
+// Remove polyfill file
+try { require('fs').unlinkSync(polyfillPath) } catch {}
 
 if (proc.exitCode !== 0) {
   process.exit(proc.exitCode ?? 1)
