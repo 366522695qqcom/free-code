@@ -114,17 +114,18 @@ for (let i = 0; i < args.length; i += 1) {
 }
 const features = [...featureSet]
 
+// --compile: generate standalone binary (default for --dev)
+// without --compile: generate JS bundle (runs with `bun ./cli.js`)
+const bundleDir = dev ? './dist-js' : './dist-js'
 const outfile = compile
   ? dev
     ? './dist/cli-dev'
     : './dist/cli'
-  : dev
-    ? './cli-dev'
-    : './cli'
+  : `${bundleDir}/cli.js`
 const buildTime = new Date().toISOString()
 const version = dev ? getDevVersion(pkg.version) : pkg.version
 
-const outDir = dirname(outfile)
+const outDir = compile ? dirname(outfile) : bundleDir
 if (outDir !== '.') {
   mkdirSync(outDir, { recursive: true })
 }
@@ -166,16 +167,15 @@ const cmd = [
   'bun',
   'build',
   './src/entrypoints/cli.tsx',
-  '--compile',
+  ...(compile ? ['--compile'] : []),
   '--target',
   windowsTarget ? 'bun-windows-x64' : 'bun',
   '--format',
   'esm',
-  '--outfile',
-  outfile,
+  ...(compile
+    ? ['--outfile', outfile]
+    : ['--outdir', outDir]),
   '--minify',
-  // Note: --bytecode is not used because Bun doesn't support ESM bytecode.
-  // On Windows, this is especially important as the bytecode feature requires CJS format.
   '--packages',
   'bundle',
   '--conditions',
@@ -194,67 +194,69 @@ for (const [key, value] of Object.entries(defines)) {
   cmd.push('--define', `${key}=${value}`)
 }
 
-// Bun 1.2.14 has a bug where bun:bundle's feature() macro is not inlined
-// when using --compile, causing "Cannot find package 'bundle'" at runtime.
-// Workaround: temporarily replace bun:bundle imports with a polyfill that
-// returns true/false based on the feature set, then restore after build.
-const featureArrayStr = JSON.stringify(features)
-const polyfillContent = `// Auto-generated polyfill for bun:bundle (build-time workaround for Bun 1.2.14)
+// Bun 1.2.14 has two issues with bun:bundle:
+// 1. In --compile mode: feature() macro is not inlined → "Cannot find package 'bundle'"
+// 2. In JS bundle mode: bun:bundle is stripped to "bundle" → "Cannot find package 'bundle'"
+// Workaround for both: temporarily replace bun:bundle imports with a polyfill.
+// The --feature flags are removed because they target bun:bundle's feature(),
+// not the polyfill. DCE is less aggressive as a result, but stub files handle
+// any missing dynamic imports.
+{
+  const featureArrayStr = JSON.stringify(features)
+  const polyfillContent = `// Auto-generated polyfill for bun:bundle (build-time workaround for Bun 1.2.14)
 const _features = new Set(${featureArrayStr});
 export function feature(name) { return _features.has(name); }
 `
 
-const polyfillPath = join(process.cwd(), 'src', '_bundlePolyfill.ts')
-const sourceFiles = globSync('src/**/*.ts', { cwd: process.cwd() })
-  .concat(globSync('src/**/*.tsx', { cwd: process.cwd() }))
-  .map(f => join(process.cwd(), f))
+  const polyfillPath = join(process.cwd(), 'src', '_bundlePolyfill.ts')
+  const sourceFiles = globSync('src/**/*.ts', { cwd: process.cwd() })
+    .concat(globSync('src/**/*.tsx', { cwd: process.cwd() }))
+    .map(f => join(process.cwd(), f))
 
-const modifiedFiles: Array<{ path: string; original: string }> = []
-for (const filePath of sourceFiles) {
-  try {
-    const content = readFileSync(filePath, 'utf8')
-    if (content.includes('bun:bundle')) {
-      // Replace any import from 'bun:bundle' with import from 'src/_bundlePolyfill.js'
-      const finalContent = content.replace(
-        /from\s+['"]bun:bundle['"]/g,
-        "from 'src/_bundlePolyfill.js'"
-      )
-      if (finalContent !== content) {
-        writeFileSync(filePath, finalContent)
-        modifiedFiles.push({ path: filePath, original: content })
+  const modifiedFiles: Array<{ path: string; original: string }> = []
+  for (const filePath of sourceFiles) {
+    try {
+      const content = readFileSync(filePath, 'utf8')
+      if (content.includes('bun:bundle')) {
+        const finalContent = content.replace(
+          /from\s+['"]bun:bundle['"]/g,
+          "from 'src/_bundlePolyfill.js'"
+        )
+        if (finalContent !== content) {
+          writeFileSync(filePath, finalContent)
+          modifiedFiles.push({ path: filePath, original: content })
+        }
       }
+    } catch {
+      // Skip files that can't be read
     }
-  } catch {
-    // Skip files that can't be read
+  }
+
+  writeFileSync(polyfillPath, polyfillContent)
+
+  // Remove --feature flags since we're using the polyfill instead
+  const cmdWithoutFeatures = cmd.filter(c => !c.startsWith('--feature='))
+
+  const proc = Bun.spawnSync({
+    cmd: cmdWithoutFeatures,
+    cwd: process.cwd(),
+    stdout: 'inherit',
+    stderr: 'inherit',
+  })
+
+  // Restore original source files
+  for (const { path, original } of modifiedFiles) {
+    writeFileSync(path, original)
+  }
+  try { require('fs').unlinkSync(polyfillPath) } catch {}
+
+  if (proc.exitCode !== 0) {
+    process.exit(proc.exitCode ?? 1)
   }
 }
 
-// Write the polyfill file
-writeFileSync(polyfillPath, polyfillContent)
-
-// Remove --feature flags since we're using the polyfill instead
-const cmdWithoutFeatures = cmd.filter(c => !c.startsWith('--feature='))
-
-const proc = Bun.spawnSync({
-  cmd: cmdWithoutFeatures,
-  cwd: process.cwd(),
-  stdout: 'inherit',
-  stderr: 'inherit',
-})
-
-// Restore original source files
-for (const { path, original } of modifiedFiles) {
-  writeFileSync(path, original)
-}
-// Remove polyfill file
-try { require('fs').unlinkSync(polyfillPath) } catch {}
-
-if (proc.exitCode !== 0) {
-  process.exit(proc.exitCode ?? 1)
-}
-
-if (existsSync(outfile)) {
+if (compile && existsSync(outfile)) {
   chmodSync(outfile, 0o755)
 }
 
-console.log(`Built ${outfile}`)
+console.log(`Built ${compile ? outfile : outDir + '/'}`)
