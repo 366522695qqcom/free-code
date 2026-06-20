@@ -40,7 +40,7 @@ jobs:
           export const DEFAULT_GRANT_FLAGS = [];
           EOF
           cat > node_modules/@ant/computer-use-mcp/types.js << 'EOF'
-          export {};
+          export const DEFAULT_GRANT_FLAGS = {};
           EOF
           cat > node_modules/@ant/computer-use-mcp/sentinelApps.js << 'EOF'
           export function getSentinelCategory() { return null; }
