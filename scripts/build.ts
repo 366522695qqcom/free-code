@@ -119,8 +119,8 @@ const features = [...featureSet]
 const bundleDir = dev ? './dist-js' : './dist-js'
 const outfile = compile
   ? dev
-    ? './dist/cli-dev'
-    : './dist/cli'
+    ? `./dist/cli-dev${windowsTarget ? '.exe' : ''}`
+    : `./dist/cli${windowsTarget ? '.exe' : ''}`
   : `${bundleDir}/cli.js`
 const buildTime = new Date().toISOString()
 const version = dev ? getDevVersion(pkg.version) : pkg.version
