@@ -100,9 +100,46 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Release ${{ steps.version.outputs.tag }}
-          generate_release_notes: true
+          body: |
+            ## Windows 用户
+            - **Windows 10/11**: 下载 `cli.exe` 直接运行（无需安装 Bun）
+            - **Windows 7**: Bun 编译的 exe 依赖 `RtlGetSystemTimePrecise`（Win8+），不兼容 Win7。请使用 JS bundle：
+              1. 下载 `cli-js-bundle.zip` 并解压
+              2. 安装 [Node.js 18+](https://nodejs.org/) 或 [Bun 1.0.x](https://bun.sh/)
+              3. 运行 `node cli.js --version` 或 `bun cli.js --version`
+
+            ## Linux 用户
+            下载 `cli` 并 `chmod +x cli && ./cli --version`
           files: |
             dist/cli.exe
             dist/cli
+            dist-js/cli.js
+            dist-js/README-15xfep0j.md
+            dist-js/README-a20jqpfq.md
+            dist-js/README-fdkrkffh.md
+            dist-js/README-sts9jh7p.md
+            dist-js/SKILL-dw2s725q.md
+            dist-js/batches-jj4gxxrq.md
+            dist-js/batches-z6rg4c5n.md
+            dist-js/claude-api-akprmxgv.md
+            dist-js/claude-api-b5fb83xf.md
+            dist-js/claude-api-ckh5vv5d.md
+            dist-js/claude-api-t3fc2xy0.md
+            dist-js/claude-api-ycaa4za1.md
+            dist-js/error-codes-gbkf4wcz.md
+            dist-js/examples-t0ram870.md
+            dist-js/files-api-vqrrfqpr.md
+            dist-js/files-api-y1jg4bfp.md
+            dist-js/live-sources-jsnc9cqd.md
+            dist-js/models-5393x8e2.md
+            dist-js/patterns-gyzc7sqy.md
+            dist-js/patterns-vht8ez3b.md
+            dist-js/prompt-caching-4tyw4ek1.md
+            dist-js/streaming-q5mkr0fz.md
+            dist-js/streaming-ysbat3vy.md
+            dist-js/tool-use-concepts-s3a15sft.md
+            dist-js/tool-use-dfasx2c3.md
+            dist-js/tool-use-he8fpgww.md
+            package.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
