@@ -85,15 +85,6 @@ jobs:
           mkdir -p dist-bundle
           cp -r dist-js dist-bundle/
           cp package.json dist-bundle/
-          cd dist-bundle
-          cat > README.md << 'EOF'
-          # free-code CLI — JS Bundle
-          ## Windows 7 使用方法
-          1. 安装 Node.js 18.20.x (https://nodejs.org/dist/v18.20.4/)
-          2. 解压此 zip
-          3. 运行: node cli.js --version
-          EOF
-          zip -r ../cli-js-bundle.zip .
 
       - name: Determine version
         id: version
@@ -122,7 +113,6 @@ jobs:
           files: |
             dist/cli.exe
             dist/cli
-            cli-js-bundle.zip
             dist-js/cli.js
             dist-js/README-15xfep0j.md
             dist-js/README-a20jqpfq.md
