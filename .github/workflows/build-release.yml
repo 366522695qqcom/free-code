@@ -110,14 +110,17 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Release ${{ steps.version.outputs.tag }}
           body: |
-            ## Windows 用户
-            - **Windows 10/11**: 下载 `cli.exe` 直接运行（无需安装 Bun）
-            - **Windows 7**: Bun 编译的 exe 依赖 `RtlGetSystemTimePrecise`（Win8+），不兼容 Win7。请使用 JS bundle：
-              1. 下载 `cli-js-bundle.zip` 并解压
-              2. 安装 [Node.js 18+](https://nodejs.org/) 或 [Bun 1.0.x](https://bun.sh/)
-              3. 运行 `node cli.js --version` 或 `bun cli.js --version`
+            ## Windows 10/11
+            下载 `cli.exe` 直接运行（无需安装 Bun）
 
-            ## Linux 用户
+            ## Windows 7
+            Bun 编译的 exe 依赖 `RtlGetSystemTimePrecise`（Win8+），**不兼容 Win7**。Node 18+ 也不再支持 Win7。
+            **推荐：用 Bun 1.0.14**（最后支持 Win7 的 Bun 版本）
+            1. 下载安装 [Bun 1.0.14](https://github.com/oven-sh/bun/releases/tag/bun-v1.0.14) Windows x64
+            2. 下载 `cli-js-bundle.zip` 并解压
+            3. `cd` 到解压目录，运行 `bun cli.js --version`
+
+            ## Linux
             下载 `cli` 并 `chmod +x cli && ./cli --version`
           files: |
             dist/cli.exe
