@@ -454,3 +454,73 @@ svg {
   display: inline-flex;
   margin-top: var(--spacer-12);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   Responsive / Multi-device Adaptation
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ≥1280px: Full IDE layout (default, no override needed) */
+
+/* 1024-1279px: Hide sidebar, chat panel stays collapsible */
+@media (max-width: 1279px) {
+  .cc-workbench {
+    grid-template-columns: 48px 0px 1fr minmax(0, 480px) !important;
+  }
+  .cc-sidebar {
+    display: none !important;
+  }
+}
+
+/* 768-1023px: Hide sidebar + chat, editor only */
+@media (max-width: 1023px) {
+  .cc-workbench {
+    grid-template-columns: 48px 0px 1fr 0px !important;
+  }
+  .cc-sidebar,
+  .cc-chat-panel {
+    display: none !important;
+  }
+}
+
+/* <768px: Mobile — vertical stack, bottom nav */
+@media (max-width: 767px) {
+  .cc-workbench {
+    grid-template-rows: 40px 1fr 48px !important;
+    grid-template-columns: 1fr !important;
+  }
+  .cc-activity-rail {
+    display: none !important;
+  }
+  .cc-sidebar,
+  .cc-chat-panel {
+    display: none !important;
+  }
+  .cc-statusbar {
+    display: none !important;
+  }
+  .ds-wbtitlebar__project-selector,
+  .ds-wbtitlebar__mode-chip {
+    display: none !important;
+  }
+}
+
+/* Sessions page responsive */
+@media (max-width: 767px) {
+  .sessions-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Settings page responsive */
+@media (max-width: 767px) {
+  .settings-layout {
+    flex-direction: column !important;
+  }
+  .settings-nav {
+    position: static !important;
+    width: 100% !important;
+  }
+  .settings-page {
+    padding: var(--spacer-16) !important;
+  }
+}
