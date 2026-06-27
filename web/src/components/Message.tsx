@@ -1,80 +1,51 @@
-import type { ChatMessage } from '../types/index.js'
+// Borrowed from src/components/Message.tsx — message role dispatch pattern.
+//
+// Dispatches a Message to its role-specific sub-component:
+//   - user     → UserToolResultMessage (if toolResults present) else UserTextMessage
+//   - assistant → AssistantMessageBlock (iterates content blocks)
+//   - system   → SystemTextMessage
+//
+// Props match the spec for Task 11 (Message rendering rewrite):
+//   { message: Message; inProgressToolUseIDs?: string[]; containerWidth?: number }
+//
+// inProgressToolUseIDs and containerWidth are forwarded into the assistant
+// branch so individual tool_use cards can show a spinner / size themselves.
 
-// Borrowed from src/components/Message.tsx — message type dispatch pattern
+import type { ReactNode } from 'react'
+import type { Message } from '../types/index.js'
+import { AssistantMessageBlock } from './messages/AssistantMessageBlock.js'
+import { UserTextMessage } from './messages/UserTextMessage.js'
+import { UserToolResultMessage } from './messages/UserToolResultMessage.js'
+import { SystemTextMessage } from './messages/SystemTextMessage.js'
+
 type Props = {
-  message: ChatMessage
+  message: Message
+  inProgressToolUseIDs?: string[]
+  containerWidth?: number
 }
 
-export function Message({ message }: Props) {
-  switch (message.type) {
+export function Message({
+  message,
+  inProgressToolUseIDs,
+  containerWidth,
+}: Props): ReactNode {
+  switch (message.role) {
     case 'user':
-      return <UserMessage message={message} />
+      if (message.toolResults && message.toolResults.length > 0) {
+        return <UserToolResultMessage message={message} />
+      }
+      return <UserTextMessage message={message} />
     case 'assistant':
-      return <AssistantMessage message={message} />
-    case 'tool-use':
-      return <ToolUseMessage message={message} />
+      return (
+        <AssistantMessageBlock
+          message={message}
+          inProgressToolUseIDs={inProgressToolUseIDs}
+          containerWidth={containerWidth}
+        />
+      )
+    case 'system':
+      return <SystemTextMessage message={message} />
     default:
       return null
   }
-}
-
-function UserMessage({ message }: Props) {
-  return (
-    <div className="cc-msg cc-msg--user">
-      <div className="cc-msg__avatar">
-        <img src="/assets/icons/user.svg" alt="" width={16} height={16} />
-      </div>
-      <div className="cc-msg__content">
-        <p>{message.content}</p>
-      </div>
-    </div>
-  )
-}
-
-function AssistantMessage({ message }: Props) {
-  return (
-    <div className="cc-msg cc-msg--assistant">
-      <div className="cc-msg__avatar">
-        <img src="/assets/icons/sparkles.svg" alt="" width={16} height={16} />
-      </div>
-      <div className="cc-msg__content">
-        {message.content.split('\n').map((line, i) => {
-          if (line.startsWith('**') && line.endsWith('**')) {
-            return <p key={i}><strong>{line.replace(/\*\*/g, '')}</strong></p>
-          }
-          if (line.startsWith('- ')) {
-            return <p key={i} style={{ paddingLeft: 'var(--spacers-4)' }}>• {line.slice(2)}</p>
-          }
-          if (line === '') return <br key={i} />
-          return <p key={i}>{line}</p>
-        })}
-      </div>
-    </div>
-  )
-}
-
-function ToolUseMessage({ message }: Props) {
-  const statusClass = message.toolStatus === 'done'
-    ? 'cc-tool-block--done'
-    : message.toolStatus === 'error'
-      ? 'cc-tool-block--error'
-      : 'cc-tool-block--progress'
-
-  return (
-    <div className={`cc-tool-block ${statusClass}`}>
-      <div className="cc-tool-block__header">
-        <span className="cc-tool-block__icon">
-          {message.toolStatus === 'done' ? (
-            <img src="/assets/icons/check.svg" alt="" width={14} height={14} />
-          ) : message.toolStatus === 'progress' ? (
-            <span className="cc-spinner" />
-          ) : (
-            <img src="/assets/icons/x.svg" alt="" width={14} height={14} />
-          )}
-        </span>
-        <span className="cc-tool-block__name">{message.toolName}</span>
-        <span className="cc-tool-block__file">{message.content}</span>
-      </div>
-    </div>
-  )
 }

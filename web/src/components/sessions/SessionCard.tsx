@@ -1,4 +1,4 @@
-export type SessionStatus = 'active' | 'idle' | 'completed' | 'error'
+export type SessionStatus = 'active' | 'idle' | 'completed' | 'error' | 'archived'
 
 export type SessionCardProps = {
   name: string
@@ -20,6 +20,7 @@ const statusConfig: Record<SessionStatus, { label: string; className: string }> 
   idle: { label: 'Idle', className: 'ds-tag--warning' },
   completed: { label: 'Completed', className: 'ds-tag--success' },
   error: { label: 'Error', className: 'ds-tag--danger' },
+  archived: { label: 'Archived', className: 'ds-tag--neutral-strong' },
 }
 
 export function SessionCard({

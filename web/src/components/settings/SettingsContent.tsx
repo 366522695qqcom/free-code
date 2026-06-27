@@ -1,6 +1,8 @@
 import { Fragment } from 'react'
 import type { ReactNode, FC } from 'react'
-import { useWorkspaceState } from '../../state/WorkspaceState.js'
+import { useWorkspaceState, useSetWorkspaceState } from '../../state/WorkspaceState.js'
+import { useProviders } from '../../state/ProvidersState.js'
+import { ProvidersSection } from './ProvidersSection.js'
 
 /* ── Shared sub-components ─────────────────────────────────── */
 
@@ -83,14 +85,23 @@ function KbdCombo({ keys }: { keys: string[] }) {
 /* ── Section panels ────────────────────────────────────────── */
 
 function GeneralSection() {
+  // Task 21.4 — read default model dynamically from ProvidersState instead
+  // of the removed hardcoded "Claude 4 Opus".
+  const providers = useProviders(s => s.providers)
+  const currentProviderId = useWorkspaceState(s => s.currentProviderId)
+  const currentModel = useWorkspaceState(s => s.currentModel)
+  const provider = providers.find(p => p.id === currentProviderId) ?? providers[0]
+  const defaultModel = currentModel || provider?.models[0] || '(no model)'
+
   return (
     <>
       <div className="ds-settingrow__group">
         <GroupLabel>Basic Settings</GroupLabel>
         <Panel>
           <SettingRow title="Default Model" desc="Choose the default model for Claude Code">
-            <SettingSelect value="Claude 4 Opus" options={['Claude 4 Opus', 'Claude 4 Sonnet', 'Claude 3.5 Sonnet']} />
+            <SettingSelect value={defaultModel} options={provider?.models ?? []} />
           </SettingRow>
+          {/* Static label — not wired to a runtime value yet. */}
           <SettingRow title="Context Window" desc="Set the context window size">
             <SettingSelect value="200K tokens" options={['200K tokens', '128K tokens', '100K tokens']} />
           </SettingRow>
@@ -107,14 +118,43 @@ function GeneralSection() {
 }
 
 function ModelSection() {
+  // Task 20.3 — read current provider's models dynamically from ProvidersState
+  // and provide a "Manage Providers →" link to the providers settings tab.
+  const providers = useProviders(s => s.providers)
+  const currentProviderId = useWorkspaceState(s => s.currentProviderId)
+  const currentModel = useWorkspaceState(s => s.currentModel)
+  const setWorkspaceState = useSetWorkspaceState()
+  const provider = providers.find(p => p.id === currentProviderId) ?? providers[0]
+  const models = provider?.models ?? []
+  const selectedModel = currentModel && models.includes(currentModel)
+    ? currentModel
+    : models[0] ?? '(no model)'
+
+  const goToProviders = () => {
+    setWorkspaceState(prev => ({ ...prev, settingsActiveNav: 'providers' }))
+  }
+
   return (
     <>
       <div className="ds-settingrow__group">
         <GroupLabel>Model Selection</GroupLabel>
         <Panel>
           <SettingRow title="Default Model" desc="Choose the default model for Claude Code">
-            <SettingSelect value="Claude 4 Opus" options={['Claude 4 Opus', 'Claude 4 Sonnet', 'Claude 3.5 Sonnet']} />
+            <SettingSelect value={selectedModel} options={models} />
           </SettingRow>
+          <SettingRow
+            title="Manage Providers"
+            desc="Add, edit, or remove model providers and their API keys"
+          >
+            <button
+              type="button"
+              className="ds-settingrow__btn"
+              onClick={goToProviders}
+            >
+              Manage Providers →
+            </button>
+          </SettingRow>
+          {/* Static label — not wired to a runtime value yet. */}
           <SettingRow title="Context Window" desc="Set the context window size">
             <SettingSelect value="200K tokens" options={['200K tokens', '128K tokens', '100K tokens']} />
           </SettingRow>
@@ -320,6 +360,7 @@ function AboutSection() {
 
 const SECTION_MAP: Record<string, FC> = {
   general: GeneralSection,
+  providers: ProvidersSection,
   model: ModelSection,
   context: ModelSection,
   permissions: PermissionsSection,

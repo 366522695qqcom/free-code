@@ -13,6 +13,12 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: 'Providers',
+    items: [
+      { key: 'providers', icon: 'plug.svg', label: 'Providers' },
+    ],
+  },
+  {
     title: 'Model',
     items: [
       { key: 'model', icon: 'sparkles.svg', label: 'Model Selection' },

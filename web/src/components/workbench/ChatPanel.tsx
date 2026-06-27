@@ -1,47 +1,30 @@
-import React, { useRef, useCallback } from 'react'
+// Borrowed from src/components/ChatPanel.tsx — Web port of cc's chat composer.
+//
+// cc's ChatPanel (Ink) reads keypresses, calls the SDK directly, and renders
+// messages via <Transcript>. The Web port mirrors the composer behavior:
+// textarea bound to local state, Enter to send (Shift+Enter for newline),
+// isLoading disables send + shows spinner, error renders a dismissable
+// banner, and messages are rendered by the new <Message> dispatch component
+// (Phase 5). The actual streaming + tool execution lives in useChat (Task 15)
+// so this component stays a thin view layer.
+//
+// Slash command UX (open on "/", navigate with arrows, Enter to insert) is
+// preserved from the original stub; the only change is that the textarea is
+// now controlled (`value={inputText}`) so command insertion writes into the
+// same React state as user typing.
+
+import React, { useCallback, useRef, useState } from 'react'
 import { useWorkspaceState, useSetWorkspaceState } from '../../state/WorkspaceState.js'
 import { usePanelToggle } from '../../hooks/usePanelToggle.js'
 import { useSlashCommand } from '../../hooks/useSlashCommand.js'
+import { useChat } from '../../hooks/useChat.js'
+import { useCanUseTool } from '../../hooks/useCanUseTool.jsx'
 import { SlashCommandPanel } from './SlashCommandPanel.js'
-import type { ChatMessage, ChatTab } from '../../types/index.js'
-
-function Message({ message }: { message: ChatMessage }) {
-  if (message.type === 'user') {
-    return (
-      <div className="cc-msg cc-msg--user">
-        {message.content}
-      </div>
-    )
-  }
-
-  if (message.type === 'tool-use') {
-    const isDone = message.toolStatus === 'done'
-    const isProgress = message.toolStatus === 'progress'
-    const iconSrc = message.toolName === 'Read' ? 'file-text.svg'
-      : message.toolName === 'Write' ? 'edit.svg'
-      : 'code.svg'
-
-    return (
-      <div className={`cc-tool-block${isDone ? ' cc-tool-block--done' : isProgress ? ' cc-tool-block--progress' : ''}`}>
-        <div className="cc-tool-block__header">
-          <img src={`/assets/icons/${iconSrc}`} width={14} height={14} alt="" style={{ color: 'var(--icon-default)' }} />
-          <span className="cc-tool-block__label">{message.toolName}</span>
-          <span className="cc-tool-block__file">{message.content}</span>
-          <span className={`cc-tool-block__status${isDone ? ' cc-tool-block__status--done' : isProgress ? ' cc-tool-block__status--progress' : ''}`}>
-            {isDone && <img src="/assets/icons/check.svg" width={14} height={14} alt="" />}
-            {isProgress && <div className="cc-spinner" />}
-          </span>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="cc-msg cc-msg--assistant">
-      {message.content}
-    </div>
-  )
-}
+import { ModelSelector } from './ModelSelector.js'
+import { Spinner } from '../Spinner.js'
+import { Message as MessageItem } from '../Message.js'
+import type { Message } from '../../types/index.js'
+import type { ChatTab } from '../../types/index.js'
 
 const CHAT_TABS: { key: ChatTab; label: string }[] = [
   { key: 'chat', label: 'Chat' },
@@ -49,10 +32,13 @@ const CHAT_TABS: { key: ChatTab; label: string }[] = [
 ]
 
 export function ChatPanel() {
-  const messages = useWorkspaceState(s => s.messages)
+  const legacyMessages = useWorkspaceState(s => s.messages)
+  const inProgressToolUseIDs = useWorkspaceState(s => s.inProgressToolUseIDs)
   const activeChatTab = useWorkspaceState(s => s.activeChatTab)
   const setState = useSetWorkspaceState()
   const { toggleChatPanel } = usePanelToggle()
+  const { send, isLoading, error } = useChat()
+  const { ElicitationCard } = useCanUseTool()
   const {
     slashCommandOpen,
     filteredCommands,
@@ -61,14 +47,36 @@ export function ChatPanel() {
     updateFilter,
     navigateUp,
     navigateDown,
-    selectCommand,
     slashCommandIndex,
   } = useSlashCommand()
 
+  const [inputText, setInputText] = useState('')
+  // useChat owns `error`; we can't call its setError here. Track a dismissed
+  // reference locally so the user can clear the banner without waiting for the
+  // next send (which resets error to null inside useChat). When a NEW error
+  // instance arrives, error !== dismissedError → banner reappears.
+  const [dismissedError, setDismissedError] = useState<Error | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // WorkspaceState.messages is typed ChatMessage[] (legacy, Phase 1); useChat
+  // (Task 15) writes Message-shaped objects into the same field. Cast through
+  // `unknown` so the new <Message> dispatch component (Phase 5) can render
+  // them. Full migration of the field type is Phase 5+8 work — intentionally
+  // not changed here.
+  const messages = legacyMessages as unknown as Message[]
+
+  const showError = error !== null && error !== dismissedError
+
+  const sendMessage = useCallback(() => {
+    const trimmed = inputText.trim()
+    if (!trimmed || isLoading) return
+    void send(trimmed)
+    setInputText('')
+  }, [inputText, isLoading, send])
 
   const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value
+    setInputText(value)
     if (value === '/') {
       openSlashPanel()
     } else if (!value.startsWith('/')) {
@@ -79,24 +87,51 @@ export function ChatPanel() {
   }, [openSlashPanel, closeSlashPanel, updateFilter])
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (!slashCommandOpen) return
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      navigateDown()
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      navigateUp()
-    } else if (e.key === 'Enter' && slashCommandIndex >= 0) {
-      e.preventDefault()
-      const cmd = filteredCommands[slashCommandIndex]
-      if (cmd && textareaRef.current) {
-        textareaRef.current.value = cmd.name + ' '
-        closeSlashPanel()
+    // Slash command navigation takes precedence while the panel is open.
+    if (slashCommandOpen) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        navigateDown()
+        return
       }
-    } else if (e.key === 'Escape') {
-      closeSlashPanel()
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        navigateUp()
+        return
+      }
+      if (e.key === 'Enter' && slashCommandIndex >= 0) {
+        const cmd = filteredCommands[slashCommandIndex]
+        if (cmd) {
+          e.preventDefault()
+          setInputText(cmd.name + ' ')
+          closeSlashPanel()
+          // Re-focus after the controlled value update flushes to the DOM.
+          requestAnimationFrame(() => textareaRef.current?.focus())
+          return
+        }
+      }
+      if (e.key === 'Escape') {
+        closeSlashPanel()
+        return
+      }
     }
-  }, [slashCommandOpen, navigateDown, navigateUp, selectCommand, slashCommandIndex, filteredCommands, closeSlashPanel])
+
+    // Enter sends, Shift+Enter inserts a newline (mirrors cc + most chat UXs).
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }, [
+    slashCommandOpen,
+    slashCommandIndex,
+    filteredCommands,
+    navigateUp,
+    navigateDown,
+    closeSlashPanel,
+    sendMessage,
+  ])
+
+  const sendDisabled = isLoading || !inputText.trim()
 
   return (
     <div className="cc-chat-panel" style={{ gridColumn: 4, gridRow: 2, display: 'flex', flexDirection: 'column', background: 'var(--bg-base-secondary)', borderLeft: '1px solid var(--border-neutral-l1)', overflow: 'hidden' }}>
@@ -134,17 +169,37 @@ export function ChatPanel() {
 
       <div className="cc-chat-messages">
         {messages.map(msg => (
-          <Message key={msg.id} message={msg} />
+          <MessageItem key={msg.id} message={msg} inProgressToolUseIDs={inProgressToolUseIDs} />
         ))}
       </div>
 
       <div className="cc-chat-composer">
+        {showError && error && (
+          <div
+            onClick={() => setDismissedError(error)}
+            title="Click to dismiss"
+            style={{
+              background: 'var(--status-error-surface-l1, #fde8e8)',
+              border: '1px solid var(--status-error-default, #e5484d)',
+              color: 'var(--status-error-default, #e5484d)',
+              borderRadius: 'var(--radius-4)',
+              padding: 'var(--spacer-8) var(--spacer-12)',
+              marginBottom: 'var(--spacer-8)',
+              fontSize: 'var(--body-xs-font-size)',
+              cursor: 'pointer',
+            }}
+          >
+            {error.message}
+          </div>
+        )}
+        <ElicitationCard />
         <div className="ds-composer" style={{ maxWidth: '100%', borderRadius: 'var(--radius-8)' }}>
           <textarea
             ref={textareaRef}
             className="ds-composer__input"
             rows={2}
             placeholder="输入消息，输入 / 查看可用命令..."
+            value={inputText}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
           />
@@ -153,26 +208,30 @@ export function ChatPanel() {
               filteredCommands={filteredCommands}
               highlightedIndex={slashCommandIndex}
               onSelect={(cmd) => {
-                if (textareaRef.current) {
-                  textareaRef.current.value = cmd.name + ' '
-                  textareaRef.current.focus()
-                }
+                setInputText(cmd.name + ' ')
                 closeSlashPanel()
+                requestAnimationFrame(() => textareaRef.current?.focus())
               }}
             />
           )}
           <div className="ds-composer__toolbar">
             <div className="ds-composer__tools">
-              <button className="ds-composer__icon-btn" title="Attach image">
-                <img src="/assets/icons/image.svg" width={16} height={16} alt="" style={{ color: 'var(--icon-secondary)' }} />
-              </button>
-              <button className="ds-composer__icon-btn" title="Voice input">
-                <img src="/assets/icons/mic.svg" width={16} height={16} alt="" style={{ color: 'var(--icon-secondary)' }} />
-              </button>
+              <ModelSelector />
             </div>
             <div className="ds-composer__actions">
-              <button className="ds-composer__send" title="Send message">
-                <img src="/assets/icons/send.0c0c0d.svg" width={16} height={16} alt="" />
+              <button
+                className="ds-composer__send"
+                title={isLoading ? 'Sending…' : 'Send message'}
+                disabled={sendDisabled}
+                onClick={sendMessage}
+                style={{
+                  opacity: sendDisabled ? 0.5 : 1,
+                  cursor: sendDisabled ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isLoading
+                  ? <Spinner />
+                  : <img src="/assets/icons/send.0c0c0d.svg" width={16} height={16} alt="" />}
               </button>
             </div>
           </div>

@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import { useWorkspaceState, useSetWorkspaceState } from '../state/WorkspaceState.js'
+import { useSessions } from '../state/SessionsState.js'
 import { SessionCard, type SessionStatus } from '../components/sessions/SessionCard.js'
 import { NewSessionModal } from '../components/sessions/NewSessionModal.js'
+import type { ChatSession } from '../types/index.js'
 
 type TabKey = 'active' | 'history' | 'archived'
 
@@ -11,94 +13,43 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'archived', label: 'Archived' },
 ]
 
-/* ── Sample data ──────────────────────────────────────────────── */
+/* ── Helpers ─────────────────────────────────────────────────── */
 
-type SessionData = {
-  id: string
-  name: string
-  projectPath: string
-  model: string
-  lastActive: string
-  messageCount: number
-  status: SessionStatus
-  isCurrent?: boolean
+// Borrowed from src/utils/formatRelativeTime.ts (simplified for Web).
+function formatRelativeTime(timestamp: number): string {
+  const now = Date.now()
+  const diff = Math.max(0, now - timestamp)
+  const sec = Math.floor(diff / 1000)
+  if (sec < 60) return 'just now'
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `${min} min ago`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `${hr} hour${hr === 1 ? '' : 's'} ago`
+  const day = Math.floor(hr / 24)
+  if (day < 30) return `${day} day${day === 1 ? '' : 's'} ago`
+  return new Date(timestamp).toLocaleDateString()
 }
 
-const ACTIVE_SESSIONS: SessionData[] = [
-  {
-    id: 's1',
-    name: 'Refactor App Component',
-    projectPath: 'MY-PROJECT',
-    model: 'Claude Opus 4',
-    lastActive: '2 min ago',
-    messageCount: 14,
-    status: 'active',
-    isCurrent: true,
-  },
-  {
-    id: 's2',
-    name: 'Fix Login Bug',
-    projectPath: 'AUTH-SERVICE',
-    model: 'Claude Sonnet 4',
-    lastActive: '15 min ago',
-    messageCount: 8,
-    status: 'completed',
-  },
-  {
-    id: 's3',
-    name: 'Write Unit Tests',
-    projectPath: 'MY-PROJECT',
-    model: 'Claude Opus 4',
-    lastActive: '8 min ago',
-    messageCount: 6,
-    status: 'idle',
-  },
-  {
-    id: 's4',
-    name: 'API Documentation Update',
-    projectPath: 'API-DOCS',
-    model: 'Claude Sonnet 4',
-    lastActive: '30 min ago',
-    messageCount: 11,
-    status: 'error',
-  },
-]
-
-const HISTORY_SESSIONS: SessionData[] = [
-  {
-    id: 'h1',
-    name: 'Database Migration Script',
-    projectPath: 'MY-PROJECT',
-    model: 'Claude Opus 4',
-    lastActive: '1 hour ago',
-    messageCount: 22,
-    status: 'completed',
-  },
-  {
-    id: 'h2',
-    name: 'Add Auth Middleware',
-    projectPath: 'AUTH-SERVICE',
-    model: 'Claude Sonnet 4',
-    lastActive: '2 hours ago',
-    messageCount: 18,
-    status: 'completed',
-  },
-  {
-    id: 'h3',
-    name: 'Performance Optimization',
-    projectPath: 'MY-PROJECT',
-    model: 'Claude Opus 4',
-    lastActive: '3 hours ago',
-    messageCount: 9,
-    status: 'error',
-  },
-]
+// Task 21.1 — filter real sessions by tab. `active` = anything not archived,
+// `history` = completed or errored, `archived` = archived.
+function filterByTab(sessions: ChatSession[], tab: TabKey): ChatSession[] {
+  switch (tab) {
+    case 'active':
+      return sessions.filter(s => s.status !== 'archived')
+    case 'history':
+      return sessions.filter(s => s.status === 'completed' || s.status === 'error')
+    case 'archived':
+      return sessions.filter(s => s.status === 'archived')
+  }
+}
 
 /* ── Page Component ───────────────────────────────────────────── */
 
 export function Sessions() {
   const activeTab = useWorkspaceState(s => s.sessionsActiveTab)
+  const currentSessionId = useWorkspaceState(s => s.currentSessionId)
   const setState = useSetWorkspaceState()
+  const allSessions = useSessions(s => s.sessions)
 
   const setTab = (key: TabKey) => {
     setState(prev => ({ ...prev, sessionsActiveTab: key }))
@@ -108,11 +59,7 @@ export function Sessions() {
     setState(prev => ({ ...prev, newSessionModalOpen: true }))
   }
 
-  const sessions = activeTab === 'active'
-    ? ACTIVE_SESSIONS
-    : activeTab === 'history'
-      ? HISTORY_SESSIONS
-      : []
+  const sessions = filterByTab(allSessions, activeTab)
 
   return (
     <div
@@ -180,13 +127,13 @@ export function Sessions() {
           {sessions.map(session => (
             <SessionCard
               key={session.id}
-              name={session.name}
+              name={session.title}
               projectPath={session.projectPath}
               model={session.model}
-              lastActive={session.lastActive}
+              lastActive={formatRelativeTime(session.updatedAt)}
               messageCount={session.messageCount}
-              status={session.status}
-              isCurrent={session.isCurrent}
+              status={session.status as SessionStatus}
+              isCurrent={session.id === currentSessionId}
             />
           ))}
         </section>

@@ -1,6 +1,17 @@
 import { useCallback } from 'react'
 import { useWorkspaceState, useSetWorkspaceState } from '../state/WorkspaceState.js'
-import { SLASH_COMMANDS } from '../types/index.js'
+import { getSlashCommandsForUI } from '../commands.js'
+import type { SlashCommand } from '../types/index.js'
+
+// Borrowed from src/commands.ts getSlashCommandsForUI() — feed the slash panel
+// from the command registry instead of the removed hardcoded SLASH_COMMANDS.
+// The registry returns bare names ('help'); the panel/insertion expect a
+// leading '/', and argumentHint maps onto the SlashCommand.shortcut field.
+const AVAILABLE_COMMANDS: SlashCommand[] = getSlashCommandsForUI().map(c => ({
+  name: `/${c.name}`,
+  description: c.description,
+  shortcut: c.argumentHint,
+}))
 
 export function useSlashCommand() {
   const slashCommandOpen = useWorkspaceState(s => s.slashCommandOpen)
@@ -8,7 +19,7 @@ export function useSlashCommand() {
   const slashCommandIndex = useWorkspaceState(s => s.slashCommandIndex)
   const setState = useSetWorkspaceState()
 
-  const filteredCommands = SLASH_COMMANDS.filter(cmd =>
+  const filteredCommands = AVAILABLE_COMMANDS.filter(cmd =>
     cmd.name.toLowerCase().includes(slashCommandFilter.toLowerCase())
   )
 
