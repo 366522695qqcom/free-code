@@ -729,14 +729,19 @@ export async function fetchModels(provider: Provider): Promise<string[]> {
   try {
     response = await fetch(url, { method: 'GET', headers })
   } catch (err) {
+    // `TypeError: Failed to fetch` in the browser almost always means CORS
+    // blocked the request: the LLM provider's /models endpoint either does
+    // not return Access-Control-Allow-Origin or rejects the preflight.
+    // Provide an actionable message.
+    const msg = err instanceof Error ? err.message : String(err)
     throw new Error(
-      `Network error fetching models: ${err instanceof Error ? err.message : String(err)}`,
+      `无法连接到 ${provider.baseURL}（${msg}）。这通常是浏览器 CORS 跨域限制导致——提供商的模型列表接口不允许从网页直接访问。可手动在「模型」输入框中填入模型名，例如：${isAnthropic ? 'claude-3-5-sonnet-20241022' : 'gpt-4o'}`,
     )
   }
 
   const text = await response.text()
   if (!response.ok) {
-    throw new Error(`Failed to fetch models: ${response.status} ${text}`)
+    throw new Error(`拉取失败：HTTP ${response.status} ${text.slice(0, 200)}`)
   }
 
   const parsed = JSON.parse(text) as { data?: Array<{ id?: string }> }
