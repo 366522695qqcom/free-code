@@ -703,45 +703,37 @@ function mergeUsage(prev: Usage, delta: Partial<Usage>): Usage {
 // ── Models list ───────────────────────────────────────────────────────
 
 /**
- * Fetch the list of model IDs available for a given provider. GETs the
- * provider's /v1/models endpoint (Anthropic) or /models endpoint (OpenAI,
- * whose baseURL already includes /v1) and returns the `id` of each entry
- * in the `data` array. Mirrors the header construction used by
- * streamAnthropic / streamOpenAI.
+ * 通过同源 Vercel serverless function（/api/models）代理请求获取模型列表，
+ * 避免浏览器直接请求上游 API 被 CORS 拦截。后缀路径由 serverless function
+ * 自动添加（anthropic → /v1/models，openai → /models）。
  */
 export async function fetchModels(provider: Provider): Promise<string[]> {
-  const isAnthropic = provider.apiType === 'anthropic'
-  const url = isAnthropic
-    ? `${provider.baseURL.replace(/\/$/, '')}/v1/models`
-    : `${provider.baseURL.replace(/\/$/, '')}/models`
-
-  const headers: Record<string, string> = isAnthropic
-    ? {
-        'x-api-key': provider.apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      }
-    : {
-        authorization: `Bearer ${provider.apiKey}`,
-      }
-
   let response: Response
   try {
-    response = await fetch(url, { method: 'GET', headers })
+    response = await fetch('/api/models', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        apiType: provider.apiType,
+        baseURL: provider.baseURL,
+        apiKey: provider.apiKey,
+      }),
+    })
   } catch (err) {
-    // `TypeError: Failed to fetch` in the browser almost always means CORS
-    // blocked the request: the LLM provider's /models endpoint either does
-    // not return Access-Control-Allow-Origin or rejects the preflight.
-    // Provide an actionable message.
     const msg = err instanceof Error ? err.message : String(err)
-    throw new Error(
-      `无法连接到 ${provider.baseURL}（${msg}）。这通常是浏览器 CORS 跨域限制导致——提供商的模型列表接口不允许从网页直接访问。可手动在「模型」输入框中填入模型名，例如：${isAnthropic ? 'claude-3-5-sonnet-20241022' : 'gpt-4o'}`,
-    )
+    throw new Error(`网络错误：${msg}`)
   }
 
   const text = await response.text()
   if (!response.ok) {
-    throw new Error(`拉取失败：HTTP ${response.status} ${text.slice(0, 200)}`)
+    let message = text.slice(0, 300)
+    try {
+      const errObj = JSON.parse(text) as { error?: string }
+      if (errObj.error) message = errObj.error
+    } catch {
+      // keep raw text
+    }
+    throw new Error(`拉取失败（HTTP ${response.status}）：${message}`)
   }
 
   const parsed = JSON.parse(text) as { data?: Array<{ id?: string }> }
