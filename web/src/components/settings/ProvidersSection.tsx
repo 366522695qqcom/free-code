@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useProviders, useSetProviders } from '../../state/ProvidersState.js'
 import { useWorkspaceState, useSetWorkspaceState } from '../../state/WorkspaceState.js'
 import type { ApiType, Provider } from '../../types/index.js'
+import { fetchModels } from '../../services/chatClient.js'
 
 // Phase 9 / Task 19 — Providers configuration panel.
 //
@@ -58,7 +59,7 @@ function ProviderRow({
 }) {
   const apiKeyPreview = provider.apiKey
     ? '••••••••' + provider.apiKey.slice(-4)
-    : '(not set)'
+    : '（未设置）'
 
   return (
     <div
@@ -83,7 +84,7 @@ function ProviderRow({
             marginTop: 'var(--spacer-2)',
           }}
         >
-          {provider.baseURL} · {provider.models.length} model(s)
+          {provider.baseURL} · {provider.models.length} 个模型
         </div>
         <div
           style={{
@@ -97,10 +98,10 @@ function ProviderRow({
       </div>
       <div style={{ display: 'flex', gap: 'var(--spacer-8)', flexShrink: 0 }}>
         <button className="ds-btn ds-btn--secondary ds-btn--sm" type="button" onClick={onEdit}>
-          Edit
+          编辑
         </button>
         <button className="ds-btn ds-btn--danger-subtle ds-btn--sm" type="button" onClick={onDelete}>
-          Delete
+          删除
         </button>
       </div>
     </div>
@@ -118,6 +119,9 @@ function ProviderForm({
 }) {
   const [data, setData] = useState<Omit<Provider, 'id'>>(initial)
   const [modelsText, setModelsText] = useState(initial.models.join(', '))
+  const [fetching, setFetching] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const [fetchSuccess, setFetchSuccess] = useState<string | null>(null)
 
   const save = () => {
     const models = modelsText
@@ -127,7 +131,41 @@ function ProviderForm({
     onSave({ ...data, models })
   }
 
-  const title = initial.name ? 'Edit Provider' : 'Add Provider'
+  const title = initial.name ? '编辑提供商' : '添加提供商'
+
+  const handleFetchModels = async () => {
+    if (!data.apiKey || !data.baseURL) return
+    setFetching(true)
+    setFetchError(null)
+    setFetchSuccess(null)
+    try {
+      const provider: Provider = {
+        id: '',
+        name: data.name,
+        apiType: data.apiType,
+        baseURL: data.baseURL,
+        apiKey: data.apiKey,
+        models: [],
+      }
+      const fetched = await fetchModels(provider)
+      const existing = modelsText
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+      const merged = Array.from(new Set([...existing, ...fetched]))
+      setModelsText(merged.join(', '))
+      setFetchSuccess(`已拉取 ${fetched.length} 个模型`)
+      setFetchError(null)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setFetchError(`拉取失败：${message}`)
+      setFetchSuccess(null)
+    } finally {
+      setFetching(false)
+    }
+  }
+
+  const canFetch = !!data.apiKey && !!data.baseURL && !fetching
 
   return (
     <div className="ds-dialog" role="dialog" aria-label={title} style={{ marginTop: 'var(--spacer-16)' }}>
@@ -138,17 +176,17 @@ function ProviderForm({
         className="ds-dialog__body"
         style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacer-12)' }}
       >
-        <Field label="Name">
+        <Field label="名称">
           <div className="ds-input">
             <input
               type="text"
               value={data.name}
               onChange={e => setData({ ...data, name: e.target.value })}
-              placeholder="My Anthropic"
+              placeholder="我的 Anthropic"
             />
           </div>
         </Field>
-        <Field label="API Type">
+        <Field label="API 类型">
           <select
             className="ds-select"
             value={data.apiType}
@@ -184,7 +222,7 @@ function ProviderForm({
             />
           </div>
         </Field>
-        <Field label="Models (comma-separated)">
+        <Field label="模型（逗号分隔）">
           <div className="ds-input">
             <input
               type="text"
@@ -193,11 +231,31 @@ function ProviderForm({
               placeholder="claude-3-5-sonnet-20241022, claude-3-5-haiku-20241022"
             />
           </div>
+          <button
+            className="ds-btn ds-btn--secondary ds-btn--sm"
+            type="button"
+            onClick={handleFetchModels}
+            disabled={!canFetch}
+            title={!data.apiKey || !data.baseURL ? '请先填写 Base URL 和 API Key' : undefined}
+            style={{ alignSelf: 'flex-start', marginTop: 'var(--spacer-6)' }}
+          >
+            {fetching ? '拉取中…' : '获取模型列表'}
+          </button>
+          {fetchError && (
+            <div style={{ color: 'var(--text-danger, #d33)', fontSize: 'var(--body-sm-font-size)' }}>
+              {fetchError}
+            </div>
+          )}
+          {fetchSuccess && !fetchError && (
+            <div style={{ color: 'var(--text-success, #2c8a3e)', fontSize: 'var(--body-sm-font-size)' }}>
+              {fetchSuccess}
+            </div>
+          )}
         </Field>
       </div>
       <div className="ds-dialog__foot">
         <button className="ds-btn ds-btn--secondary" type="button" onClick={onCancel}>
-          Cancel
+          取消
         </button>
         <button
           className="ds-btn ds-btn--brand"
@@ -205,7 +263,7 @@ function ProviderForm({
           onClick={save}
           disabled={!data.name}
         >
-          Save
+          保存
         </button>
       </div>
     </div>
@@ -222,7 +280,7 @@ export function ProvidersSection() {
   )
 
   const handleDelete = (provider: Provider) => {
-    if (!window.confirm(`Delete provider "${provider.name}"?`)) return
+    if (!window.confirm(`确定删除提供商 "${provider.name}" ？`)) return
     removeProvider(provider.id)
     // Task 19.4 — if the deleted provider was the currently selected one,
     // auto-switch currentProviderId to the first remaining provider.
@@ -246,14 +304,14 @@ export function ProvidersSection() {
           alignItems: 'center',
         }}
       >
-        <GroupLabel>Model Providers</GroupLabel>
+        <GroupLabel>模型提供商</GroupLabel>
         <button
           className="ds-btn ds-btn--brand ds-btn--sm"
           type="button"
           onClick={() => setEditing({ id: null, data: emptyProvider() })}
         >
           <img src="/assets/icons/plus.svg" alt="" width={14} height={14} style={{ marginRight: 4 }} />
-          Add Provider
+          添加提供商
         </button>
       </div>
 
@@ -261,10 +319,9 @@ export function ProvidersSection() {
       <div className="ds-alert ds-alert--warning">
         <span className="ds-alert__icon">⚠️</span>
         <div>
-          <div className="ds-alert__title">Security Notice</div>
+          <div className="ds-alert__title">安全提示</div>
           <div className="ds-alert__desc">
-            API Keys are stored in plaintext in browser localStorage. Do not use on shared/public
-            devices.
+            API Key 以明文存储在浏览器 localStorage 中，请勿在公共/共享设备上使用。
           </div>
         </div>
       </div>
@@ -287,7 +344,7 @@ export function ProvidersSection() {
               fontSize: 'var(--body-sm-font-size)',
             }}
           >
-            No providers configured.
+            暂无已配置的提供商。
           </div>
         )}
       </Panel>

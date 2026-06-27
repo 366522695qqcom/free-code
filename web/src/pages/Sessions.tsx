@@ -8,9 +8,9 @@ import type { ChatSession } from '../types/index.js'
 type TabKey = 'active' | 'history' | 'archived'
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: 'active', label: 'Active' },
-  { key: 'history', label: 'History' },
-  { key: 'archived', label: 'Archived' },
+  { key: 'active', label: '活跃' },
+  { key: 'history', label: '历史' },
+  { key: 'archived', label: '已归档' },
 ]
 
 /* ── Helpers ─────────────────────────────────────────────────── */
@@ -20,13 +20,13 @@ function formatRelativeTime(timestamp: number): string {
   const now = Date.now()
   const diff = Math.max(0, now - timestamp)
   const sec = Math.floor(diff / 1000)
-  if (sec < 60) return 'just now'
+  if (sec < 60) return '刚刚'
   const min = Math.floor(sec / 60)
-  if (min < 60) return `${min} min ago`
+  if (min < 60) return `${min} 分钟前`
   const hr = Math.floor(min / 60)
-  if (hr < 24) return `${hr} hour${hr === 1 ? '' : 's'} ago`
+  if (hr < 24) return `${hr} 小时前`
   const day = Math.floor(hr / 24)
-  if (day < 30) return `${day} day${day === 1 ? '' : 's'} ago`
+  if (day < 30) return `${day} 天前`
   return new Date(timestamp).toLocaleDateString()
 }
 
@@ -79,9 +79,9 @@ export function Sessions() {
         {/* ── Page Header ──────────────────────────────────────── */}
         <header className="ds-pagehead">
           <div className="ds-pagehead__main">
-            <h1 className="ds-pagehead__title">Sessions</h1>
+            <h1 className="ds-pagehead__title">会话</h1>
             <p className="ds-pagehead__subtitle">
-              Manage your Claude Code concurrent sessions
+              管理您的 Claude Code 并发会话
             </p>
           </div>
           <div className="ds-pagehead__actions">
@@ -91,11 +91,11 @@ export function Sessions() {
               style={{ textDecoration: 'none' }}
             >
               <img src="/assets/icons/arrow-left.svg" alt="" style={{ width: 14, height: 14 }} />
-              Workspace
+              工作区
             </Link>
             <button className="ds-btn ds-btn--brand" type="button" onClick={openNewSessionModal}>
               <img src="/assets/icons/plus.svg" alt="" style={{ width: 14, height: 14 }} />
-              New Session
+              新建会话
             </button>
           </div>
         </header>
@@ -148,7 +148,7 @@ export function Sessions() {
               fontSize: 'var(--body-base-font-size)',
             }}
           >
-            No {activeTab} sessions found.
+            未找到{TABS.find(t => t.key === activeTab)?.label}会话。
           </div>
         )}
       </div>

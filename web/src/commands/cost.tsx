@@ -79,21 +79,21 @@ function CostCard({ onDone }: { onDone: LocalJSXCommandOnDone }) {
   }
 
   const rows: Array<{ label: string; value: string }> = [
-    { label: 'Input tokens', value: inputTokens.toLocaleString() },
-    { label: 'Output tokens', value: outputTokens.toLocaleString() },
-    { label: 'Cache read', value: cacheReadTokens.toLocaleString() },
-    { label: 'Cache creation', value: cacheCreationTokens.toLocaleString() },
-    { label: 'Total tokens', value: totalTokens.toLocaleString() },
-    { label: 'Estimated cost', value: `$${totalCost.toFixed(4)}` },
+    { label: '输入 Token', value: inputTokens.toLocaleString() },
+    { label: '输出 Token', value: outputTokens.toLocaleString() },
+    { label: '缓存读取', value: cacheReadTokens.toLocaleString() },
+    { label: '缓存创建', value: cacheCreationTokens.toLocaleString() },
+    { label: '总 Token', value: totalTokens.toLocaleString() },
+    { label: '预估成本', value: `$${totalCost.toFixed(4)}` },
   ]
 
   return (
     <div onClick={handleBackdrop} style={backdropStyle}>
-      <div className="ds-dialog" role="dialog" aria-label="Session cost" style={{ maxWidth: 380 }}>
+      <div className="ds-dialog" role="dialog" aria-label="会话成本" style={{ maxWidth: 380 }}>
         <div className="ds-dialog__head">
-          <span className="ds-dialog__title">Session cost</span>
+          <span className="ds-dialog__title">会话成本</span>
           <button className="ds-dialog__close" type="button" onClick={close}>
-            <img src="/assets/icons/x.svg" alt="Close" style={{ width: 14, height: 14 }} />
+            <img src="/assets/icons/x.svg" alt="关闭" style={{ width: 14, height: 14 }} />
           </button>
         </div>
         <div
@@ -109,7 +109,7 @@ function CostCard({ onDone }: { onDone: LocalJSXCommandOnDone }) {
         </div>
         <div className="ds-dialog__foot">
           <button className="ds-btn ds-btn--secondary" type="button" onClick={close}>
-            Close
+            关闭
           </button>
         </div>
       </div>
@@ -120,7 +120,7 @@ function CostCard({ onDone }: { onDone: LocalJSXCommandOnDone }) {
 export const costCommand: LocalJSXCommand = {
   type: 'local-jsx',
   name: 'cost',
-  description: 'Show the total cost and duration of the current session',
+  description: '显示当前会话的总成本和时长',
   userFacingName: () => '/cost',
   call: (_args, _context, onDone) => <CostCard onDone={onDone} />,
 }

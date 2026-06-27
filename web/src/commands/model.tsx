@@ -65,11 +65,11 @@ function ModelPicker({ onDone }: { onDone: LocalJSXCommandOnDone }) {
 
   return (
     <div onClick={handleBackdrop} style={backdropStyle}>
-      <div className="ds-dialog" role="dialog" aria-label="Select model" style={{ maxWidth: 420 }}>
+      <div className="ds-dialog" role="dialog" aria-label="选择模型" style={{ maxWidth: 420 }}>
         <div className="ds-dialog__head">
-          <span className="ds-dialog__title">Select model</span>
+          <span className="ds-dialog__title">选择模型</span>
           <button className="ds-dialog__close" type="button" onClick={close}>
-            <img src="/assets/icons/x.svg" alt="Close" style={{ width: 14, height: 14 }} />
+            <img src="/assets/icons/x.svg" alt="关闭" style={{ width: 14, height: 14 }} />
           </button>
         </div>
         <div
@@ -99,7 +99,7 @@ function ModelPicker({ onDone }: { onDone: LocalJSXCommandOnDone }) {
         </div>
         <div className="ds-dialog__foot">
           <button className="ds-btn ds-btn--secondary" type="button" onClick={close}>
-            Cancel
+            取消
           </button>
         </div>
       </div>
@@ -110,7 +110,7 @@ function ModelPicker({ onDone }: { onDone: LocalJSXCommandOnDone }) {
 export const modelCommand: LocalJSXCommand = {
   type: 'local-jsx',
   name: 'model',
-  description: 'Set the AI model',
+  description: '设置 AI 模型',
   argumentHint: '[model]',
   userFacingName: () => '/model',
   call: (_args, _context, onDone) => <ModelPicker onDone={onDone} />,

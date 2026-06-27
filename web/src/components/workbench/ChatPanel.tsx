@@ -27,8 +27,8 @@ import type { Message } from '../../types/index.js'
 import type { ChatTab } from '../../types/index.js'
 
 const CHAT_TABS: { key: ChatTab; label: string }[] = [
-  { key: 'chat', label: 'Chat' },
-  { key: 'plan', label: 'Plan' },
+  { key: 'chat', label: '对话' },
+  { key: 'plan', label: '计划' },
 ]
 
 export function ChatPanel() {
@@ -161,7 +161,7 @@ export function ChatPanel() {
               </button>
             ))}
           </div>
-          <button className="ds-wbtitlebar__iconbtn" title="Collapse panel" style={{ width: 24, height: 24 }} onClick={toggleChatPanel}>
+          <button className="ds-wbtitlebar__iconbtn" title="折叠面板" style={{ width: 24, height: 24 }} onClick={toggleChatPanel}>
             <img src="/assets/icons/chevron-right.svg" width={14} height={14} alt="" style={{ color: 'var(--icon-tertiary)' }} />
           </button>
         </div>
@@ -177,7 +177,7 @@ export function ChatPanel() {
         {showError && error && (
           <div
             onClick={() => setDismissedError(error)}
-            title="Click to dismiss"
+            title="点击关闭"
             style={{
               background: 'var(--status-error-surface-l1, #fde8e8)',
               border: '1px solid var(--status-error-default, #e5484d)',
@@ -221,7 +221,7 @@ export function ChatPanel() {
             <div className="ds-composer__actions">
               <button
                 className="ds-composer__send"
-                title={isLoading ? 'Sending…' : 'Send message'}
+                title={isLoading ? '发送中…' : '发送消息'}
                 disabled={sendDisabled}
                 onClick={sendMessage}
                 style={{

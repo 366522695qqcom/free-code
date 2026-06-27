@@ -3,10 +3,10 @@ import { useWorkspaceState, useSetWorkspaceState } from '../../state/WorkspaceSt
 import type { RailItem } from '../../types/index.js'
 
 const RAIL_ITEMS: { key: RailItem; icon: string; label: string }[] = [
-  { key: 'files', icon: 'files.svg', label: 'Files' },
-  { key: 'search', icon: 'search.svg', label: 'Search' },
+  { key: 'files', icon: 'files.svg', label: '文件' },
+  { key: 'search', icon: 'search.svg', label: '搜索' },
   { key: 'git', icon: 'git.svg', label: 'Git' },
-  { key: 'terminal', icon: 'terminal.svg', label: 'Terminal' },
+  { key: 'terminal', icon: 'terminal.svg', label: '终端' },
 ]
 
 export function ActivityRail() {
@@ -33,10 +33,10 @@ export function ActivityRail() {
       ))}
       <div className="ds-activityrail__spacer" />
       <div className="ds-activityrail__divider" />
-      <Link to="/sessions" className="ds-activityrail__btn" title="Sessions" style={{ textDecoration: 'none' }}>
+      <Link to="/sessions" className="ds-activityrail__btn" title="会话" style={{ textDecoration: 'none' }}>
         <img src="/assets/icons/message-circle.svg" width={18} height={18} alt="" style={{ color: 'var(--icon-secondary)' }} />
       </Link>
-      <Link to="/settings" className="ds-activityrail__btn" title="Settings" style={{ textDecoration: 'none' }}>
+      <Link to="/settings" className="ds-activityrail__btn" title="设置" style={{ textDecoration: 'none' }}>
         <img src="/assets/icons/gear.svg" width={18} height={18} alt="" style={{ color: 'var(--icon-secondary)' }} />
       </Link>
     </div>

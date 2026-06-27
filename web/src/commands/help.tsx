@@ -48,11 +48,11 @@ function HelpCard({ onDone }: { onDone: LocalJSXCommandOnDone }) {
   }
   return (
     <div onClick={handleBackdrop} style={cardStyle}>
-      <div className="ds-dialog" role="dialog" aria-label="Help" style={{ maxWidth: 560 }}>
+      <div className="ds-dialog" role="dialog" aria-label="帮助" style={{ maxWidth: 560 }}>
         <div className="ds-dialog__head">
-          <span className="ds-dialog__title">Available commands</span>
+          <span className="ds-dialog__title">可用命令</span>
           <button className="ds-dialog__close" type="button" onClick={close}>
-            <img src="/assets/icons/x.svg" alt="Close" style={{ width: 14, height: 14 }} />
+            <img src="/assets/icons/x.svg" alt="关闭" style={{ width: 14, height: 14 }} />
           </button>
         </div>
         <div
@@ -72,7 +72,7 @@ function HelpCard({ onDone }: { onDone: LocalJSXCommandOnDone }) {
         </div>
         <div className="ds-dialog__foot">
           <button className="ds-btn ds-btn--secondary" type="button" onClick={close}>
-            Close
+            关闭
           </button>
         </div>
       </div>
@@ -83,7 +83,7 @@ function HelpCard({ onDone }: { onDone: LocalJSXCommandOnDone }) {
 export const helpCommand: LocalJSXCommand = {
   type: 'local-jsx',
   name: 'help',
-  description: 'Show available commands and usage',
+  description: '显示可用命令和用法',
   userFacingName: () => '/help',
   call: (_args, _context, onDone) => <HelpCard onDone={onDone} />,
 }

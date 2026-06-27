@@ -11,7 +11,7 @@ const INIT_PROMPT = `Please analyze the project structure and create a project s
 export const initCommand: PromptCommand = {
   type: 'prompt',
   name: 'init',
-  description: 'Initialize a CLAUDE.md file with codebase documentation',
+  description: '初始化 CLAUDE.md 文件并生成代码库文档',
   userFacingName: () => '/init',
   prompt: INIT_PROMPT,
 }

@@ -8,17 +8,17 @@ export function Settings() {
       {/* Page Header */}
       <div className="ds-pagehead">
         <div className="ds-pagehead__main">
-          <span className="ds-pagehead__title">Settings</span>
-          <span className="ds-pagehead__subtitle">Configure Claude Code behavior and preferences</span>
+          <span className="ds-pagehead__title">设置</span>
+          <span className="ds-pagehead__subtitle">配置 Claude Code 的行为和偏好设置</span>
         </div>
         <div className="ds-pagehead__actions">
           <Link to="/" className="ds-pagehead__btn" style={{ textDecoration: 'none' }}>
             <img src="/assets/icons/arrow-left.svg" width={16} height={16} alt="" className="icon" />
-            Back to Workspace
+            返回工作区
           </Link>
           <Link to="/sessions" className="ds-pagehead__btn" style={{ textDecoration: 'none' }}>
             <img src="/assets/icons/message-circle.svg" width={16} height={16} alt="" className="icon" />
-            Sessions
+            会话
           </Link>
         </div>
       </div>

@@ -62,13 +62,13 @@ function StatusCard({ onDone }: { onDone: LocalJSXCommandOnDone }) {
     : '—'
 
   const rows: Array<{ label: string; value: string }> = [
-    { label: 'Session ID', value: currentSessionId ?? '—' },
-    { label: 'Session', value: session?.title ?? '—' },
-    { label: 'Provider', value: provider?.name ?? '—' },
-    { label: 'Model', value: currentModel || '—' },
-    { label: 'Messages', value: String(messages.length) },
-    { label: 'Last activity', value: lastActivity },
-    { label: 'In-progress tools', value: String(inProgressToolUseIDs.length) },
+    { label: '会话 ID', value: currentSessionId ?? '—' },
+    { label: '会话', value: session?.title ?? '—' },
+    { label: '提供商', value: provider?.name ?? '—' },
+    { label: '模型', value: currentModel || '—' },
+    { label: '消息', value: String(messages.length) },
+    { label: '最近活动', value: lastActivity },
+    { label: '进行中的工具', value: String(inProgressToolUseIDs.length) },
   ]
 
   const close = () => onDone()
@@ -78,11 +78,11 @@ function StatusCard({ onDone }: { onDone: LocalJSXCommandOnDone }) {
 
   return (
     <div onClick={handleBackdrop} style={backdropStyle}>
-      <div className="ds-dialog" role="dialog" aria-label="Status" style={{ maxWidth: 420 }}>
+      <div className="ds-dialog" role="dialog" aria-label="状态" style={{ maxWidth: 420 }}>
         <div className="ds-dialog__head">
-          <span className="ds-dialog__title">Status</span>
+          <span className="ds-dialog__title">状态</span>
           <button className="ds-dialog__close" type="button" onClick={close}>
-            <img src="/assets/icons/x.svg" alt="Close" style={{ width: 14, height: 14 }} />
+            <img src="/assets/icons/x.svg" alt="关闭" style={{ width: 14, height: 14 }} />
           </button>
         </div>
         <div
@@ -98,7 +98,7 @@ function StatusCard({ onDone }: { onDone: LocalJSXCommandOnDone }) {
         </div>
         <div className="ds-dialog__foot">
           <button className="ds-btn ds-btn--secondary" type="button" onClick={close}>
-            Close
+            关闭
           </button>
         </div>
       </div>
@@ -109,7 +109,7 @@ function StatusCard({ onDone }: { onDone: LocalJSXCommandOnDone }) {
 export const statusCommand: LocalJSXCommand = {
   type: 'local-jsx',
   name: 'status',
-  description: 'Show session status: model, provider, messages, and tool activity',
+  description: '显示会话状态：模型、提供商、消息和工具活动',
   userFacingName: () => '/status',
   call: (_args, _context, onDone) => <StatusCard onDone={onDone} />,
 }

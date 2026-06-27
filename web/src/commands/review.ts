@@ -10,7 +10,7 @@ const REVIEW_PROMPT = `Please review the recent code changes (last 5 messages of
 export const reviewCommand: PromptCommand = {
   type: 'prompt',
   name: 'review',
-  description: 'Review recent code changes',
+  description: '审查最近的代码变更',
   userFacingName: () => '/review',
   prompt: REVIEW_PROMPT,
 }

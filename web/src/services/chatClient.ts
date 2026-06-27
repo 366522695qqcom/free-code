@@ -699,3 +699,51 @@ function mergeUsage(prev: Usage, delta: Partial<Usage>): Usage {
   }
   return next
 }
+
+// ── Models list ───────────────────────────────────────────────────────
+
+/**
+ * Fetch the list of model IDs available for a given provider. GETs the
+ * provider's /v1/models endpoint (Anthropic) or /models endpoint (OpenAI,
+ * whose baseURL already includes /v1) and returns the `id` of each entry
+ * in the `data` array. Mirrors the header construction used by
+ * streamAnthropic / streamOpenAI.
+ */
+export async function fetchModels(provider: Provider): Promise<string[]> {
+  const isAnthropic = provider.apiType === 'anthropic'
+  const url = isAnthropic
+    ? `${provider.baseURL.replace(/\/$/, '')}/v1/models`
+    : `${provider.baseURL.replace(/\/$/, '')}/models`
+
+  const headers: Record<string, string> = isAnthropic
+    ? {
+        'x-api-key': provider.apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      }
+    : {
+        authorization: `Bearer ${provider.apiKey}`,
+      }
+
+  let response: Response
+  try {
+    response = await fetch(url, { method: 'GET', headers })
+  } catch (err) {
+    throw new Error(
+      `Network error fetching models: ${err instanceof Error ? err.message : String(err)}`,
+    )
+  }
+
+  const text = await response.text()
+  if (!response.ok) {
+    throw new Error(`Failed to fetch models: ${response.status} ${text}`)
+  }
+
+  const parsed = JSON.parse(text) as { data?: Array<{ id?: string }> }
+  const data = Array.isArray(parsed.data) ? parsed.data : []
+  const ids: string[] = []
+  for (const entry of data) {
+    if (entry && typeof entry.id === 'string') ids.push(entry.id)
+  }
+  return ids
+}

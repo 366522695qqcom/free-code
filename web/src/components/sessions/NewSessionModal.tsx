@@ -19,10 +19,10 @@ const PERMISSION_MODES: readonly ChatSession['permissionMode'][] = [
 ]
 
 const PERMISSION_LABELS: Record<ChatSession['permissionMode'], string> = {
-  default: 'Default',
-  plan: 'Plan',
-  'auto-accept': 'Auto-accept',
-  bypass: 'Bypass permissions',
+  default: '默认',
+  plan: '计划',
+  'auto-accept': '自动接受',
+  bypass: '绕过权限',
 }
 
 export function NewSessionModal() {
@@ -65,8 +65,8 @@ export function NewSessionModal() {
     if (!selectedProvider || !model) return
     const id = createSession({
       title: projectPath
-        ? projectPath.split('/').filter(Boolean).pop() ?? 'New Session'
-        : 'New Session',
+        ? projectPath.split('/').filter(Boolean).pop() ?? '新建会话'
+        : '新建会话',
       projectPath,
       providerId: selectedProvider.id,
       model,
@@ -108,12 +108,12 @@ export function NewSessionModal() {
         padding: 'var(--spacer-24)',
       }}
     >
-      <div className="ds-dialog" role="dialog" aria-label="New Session" style={{ maxWidth: 440 }}>
+      <div className="ds-dialog" role="dialog" aria-label="新建会话" style={{ maxWidth: 440 }}>
         {/* Head */}
         <div className="ds-dialog__head">
-          <span className="ds-dialog__title">New Session</span>
+          <span className="ds-dialog__title">新建会话</span>
           <button className="ds-dialog__close" type="button" onClick={close}>
-            <img src="/assets/icons/x.svg" alt="Close" style={{ width: 14, height: 14 }} />
+            <img src="/assets/icons/x.svg" alt="关闭" style={{ width: 14, height: 14 }} />
           </button>
         </div>
 
@@ -125,7 +125,7 @@ export function NewSessionModal() {
           {/* Project path */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacer-6)' }}>
             <label htmlFor="session-project-path" style={labelStyle}>
-              Project path
+              项目路径
             </label>
             <div className="ds-input">
               <img
@@ -146,7 +146,7 @@ export function NewSessionModal() {
           {/* Provider selector */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacer-6)' }}>
             <label htmlFor="session-provider" style={labelStyle}>
-              Provider
+              提供商
             </label>
             <select
               id="session-provider"
@@ -160,14 +160,14 @@ export function NewSessionModal() {
                   {p.name} ({p.apiType})
                 </option>
               ))}
-              {providers.length === 0 && <option value="">No providers configured</option>}
+              {providers.length === 0 && <option value="">暂无已配置的提供商</option>}
             </select>
           </div>
 
           {/* Model selector */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacer-6)' }}>
             <label htmlFor="session-model" style={labelStyle}>
-              Model
+              模型
             </label>
             <select
               id="session-model"
@@ -179,14 +179,14 @@ export function NewSessionModal() {
               {availableModels.map(m => (
                 <option key={m} value={m}>{m}</option>
               ))}
-              {availableModels.length === 0 && <option value="">No models configured</option>}
+              {availableModels.length === 0 && <option value="">暂无可用模型</option>}
             </select>
           </div>
 
           {/* Permission mode */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacer-6)' }}>
             <label htmlFor="session-permission" style={labelStyle}>
-              Permission mode
+              权限模式
             </label>
             <select
               id="session-permission"
@@ -206,7 +206,7 @@ export function NewSessionModal() {
         {/* Foot */}
         <div className="ds-dialog__foot">
           <button className="ds-btn ds-btn--secondary" type="button" onClick={close}>
-            Cancel
+            取消
           </button>
           <button
             className="ds-btn ds-btn--brand"
@@ -214,7 +214,7 @@ export function NewSessionModal() {
             onClick={handleCreate}
             disabled={!selectedProvider || !model}
           >
-            Create
+            创建
           </button>
         </div>
       </div>

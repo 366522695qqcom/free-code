@@ -8,7 +8,7 @@ import type { LocalCommand } from '../types/command.js'
 export const clearCommand: LocalCommand = {
   type: 'local',
   name: 'clear',
-  description: 'Clear conversation history and free up context',
+  description: '清空对话历史并释放上下文',
   userFacingName: () => '/clear',
   call: (_args, context) => {
     context.clearMessages()
@@ -20,7 +20,7 @@ export const clearCommand: LocalCommand = {
       {
         id: `clear-${Date.now()}`,
         type: 'assistant',
-        content: 'Conversation cleared.',
+        content: '已清空对话。',
         timestamp: Date.now(),
       },
     ])

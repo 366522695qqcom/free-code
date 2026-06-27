@@ -167,11 +167,7 @@ export function getDefaultWorkspaceState(): WorkspaceState {
     slashCommandFilter: '',
     slashCommandIndex: 0,
     messages: [],
-    editorTabs: [
-      { id: '1', name: 'jwt.ts', icon: 'code', isActive: true },
-      { id: '2', name: 'middleware.ts', icon: 'code', isActive: false },
-      { id: '3', name: 'session.ts', icon: 'code', isActive: false },
-    ],
+    editorTabs: [],
     activeEditorTab: '1',
     settingsActiveNav: 'general',
     sessionsActiveTab: 'active',

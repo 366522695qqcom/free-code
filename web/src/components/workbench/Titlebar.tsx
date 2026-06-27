@@ -3,9 +3,9 @@ import { usePanelToggle } from '../../hooks/usePanelToggle.js'
 import type { ViewMode } from '../../types/index.js'
 
 const VIEW_MODES: { key: ViewMode; label: string }[] = [
-  { key: 'verbose', label: 'Verbose' },
-  { key: 'normal', label: 'Normal' },
-  { key: 'summary', label: 'Summary' },
+  { key: 'verbose', label: '详细' },
+  { key: 'normal', label: '普通' },
+  { key: 'summary', label: '摘要' },
 ]
 
 export function Titlebar() {
@@ -29,7 +29,7 @@ export function Titlebar() {
 
       <div className="ds-wbtitlebar__project-selector">
         <img src="/assets/icons/folder.svg" width={14} height={14} alt="" style={{ color: 'var(--icon-secondary)' }} />
-        <span>my-project</span>
+        <span style={{ color: 'var(--text-tertiary)' }}>未选择项目</span>
         <img src="/assets/icons/chevron-down.svg" width={12} height={12} alt="" style={{ color: 'var(--icon-tertiary)' }} />
       </div>
 
@@ -54,10 +54,10 @@ export function Titlebar() {
             </button>
           ))}
         </div>
-        <button className="ds-wbtitlebar__iconbtn" title="Toggle sidebar" onClick={toggleSidebar}>
+        <button className="ds-wbtitlebar__iconbtn" title="切换侧栏" onClick={toggleSidebar}>
           <img src="/assets/icons/sidebar-left.svg" width={16} height={16} alt="" style={{ color: 'var(--icon-secondary)' }} />
         </button>
-        <button className="ds-wbtitlebar__iconbtn" title="Toggle panel" onClick={toggleChatPanel}>
+        <button className="ds-wbtitlebar__iconbtn" title="切换面板" onClick={toggleChatPanel}>
           <img src="/assets/icons/sidebar-right.svg" width={16} height={16} alt="" style={{ color: 'var(--icon-secondary)' }} />
         </button>
         <div

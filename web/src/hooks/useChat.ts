@@ -88,7 +88,7 @@ export function useChat(): UseChatResult {
       if (!currentProviderId || !currentModel) {
         setError(
           new Error(
-            'No provider or model configured. Add a provider in Settings → Providers.',
+            '未配置提供商或模型。请在设置 → 提供商中添加。',
           ),
         )
         return
@@ -97,7 +97,7 @@ export function useChat(): UseChatResult {
       if (!provider) {
         setError(
           new Error(
-            `Provider "${currentProviderId}" not found. Configure in Settings → Providers.`,
+            `未找到提供商 "${currentProviderId}"。请在设置 → 提供商中配置。`,
           ),
         )
         return
@@ -105,13 +105,13 @@ export function useChat(): UseChatResult {
       if (!provider.apiKey) {
         setError(
           new Error(
-            `Provider "${provider.name}" has no API key. Add one in Settings → Providers.`,
+            `提供商 "${provider.name}" 未设置 API Key。请在设置 → 提供商中添加。`,
           ),
         )
         return
       }
       if (!currentSessionId) {
-        setError(new Error('No active session. Create one in Sessions page.'))
+        setError(new Error('无活跃会话。请在会话页面创建。'))
         return
       }
 

@@ -7,52 +7,52 @@ type NavGroup = {
 
 const NAV_GROUPS: NavGroup[] = [
   {
-    title: 'General',
+    title: '通用',
     items: [
-      { key: 'general', icon: 'layout.svg', label: 'Overview' },
+      { key: 'general', icon: 'layout.svg', label: '概览' },
     ],
   },
   {
-    title: 'Providers',
+    title: '提供商',
     items: [
-      { key: 'providers', icon: 'plug.svg', label: 'Providers' },
+      { key: 'providers', icon: 'plug.svg', label: '提供商' },
     ],
   },
   {
-    title: 'Model',
+    title: '模型',
     items: [
-      { key: 'model', icon: 'sparkles.svg', label: 'Model Selection' },
-      { key: 'context', icon: 'arrow-expand.svg', label: 'Context Window' },
+      { key: 'model', icon: 'sparkles.svg', label: '模型选择' },
+      { key: 'context', icon: 'arrow-expand.svg', label: '上下文窗口' },
     ],
   },
   {
-    title: 'Permissions',
+    title: '权限',
     items: [
-      { key: 'permissions', icon: 'shield.svg', label: 'Default Permissions' },
-      { key: 'tools', icon: 'wrench.svg', label: 'Tool Permissions' },
-      { key: 'auto-approve', icon: 'check.svg', label: 'Auto Approve' },
+      { key: 'permissions', icon: 'shield.svg', label: '默认权限' },
+      { key: 'tools', icon: 'wrench.svg', label: '工具权限' },
+      { key: 'auto-approve', icon: 'check.svg', label: '自动批准' },
     ],
   },
   {
-    title: 'Appearance',
+    title: '外观',
     items: [
-      { key: 'theme', icon: 'eye.svg', label: 'Theme' },
-      { key: 'font-size', icon: 'type.svg', label: 'Font Size' },
-      { key: 'highlight', icon: 'code.svg', label: 'Code Highlighting' },
+      { key: 'theme', icon: 'eye.svg', label: '主题' },
+      { key: 'font-size', icon: 'type.svg', label: '字体大小' },
+      { key: 'highlight', icon: 'code.svg', label: '代码高亮' },
     ],
   },
   {
-    title: 'Shortcuts',
+    title: '快捷键',
     items: [
-      { key: 'keybindings', icon: 'cmd.svg', label: 'Keyboard Map' },
-      { key: 'custom-shortcuts', icon: 'key.svg', label: 'Custom Shortcuts' },
+      { key: 'keybindings', icon: 'cmd.svg', label: '键盘映射' },
+      { key: 'custom-shortcuts', icon: 'key.svg', label: '自定义快捷键' },
     ],
   },
   {
-    title: 'Data',
+    title: '数据',
     items: [
-      { key: 'history', icon: 'clock.svg', label: 'Session History' },
-      { key: 'export', icon: 'download.svg', label: 'Export Config' },
+      { key: 'history', icon: 'clock.svg', label: '会话历史' },
+      { key: 'export', icon: 'download.svg', label: '导出配置' },
     ],
   },
 ]

@@ -8,8 +8,8 @@ import type { PromptCommand } from '../types/command.js'
 export const compactCommand: PromptCommand = {
   type: 'prompt',
   name: 'compact',
-  description: 'Summarize conversation so far to free up context',
-  argumentHint: '[optional summarization instructions]',
+  description: '总结当前对话以释放上下文',
+  argumentHint: '[可选的总结说明]',
   userFacingName: () => '/compact',
   prompt: (_args) =>
     'Please summarize our conversation so far. Be concise. Keep the key facts and any open todos.',
